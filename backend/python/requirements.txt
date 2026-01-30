@@ -1,0 +1,20 @@
+# AutoPod Free - Python Dependencies for Speaker Diarization
+# Install with: pip install -r requirements.txt
+
+# Core ML framework
+torch>=2.0.0
+torchaudio>=2.0.0
+
+# Speaker diarization (primary)
+pyannote.audio>=3.1.0
+
+# Alternative embeddings (fallback)
+speechbrain>=0.5.15
+
+# Audio processing
+numpy>=1.24.0
+scipy>=1.11.0
+librosa>=0.10.0
+
+# Utilities
+tqdm>=4.65.0

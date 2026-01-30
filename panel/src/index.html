@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoPod Free</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="panel-header">
+      <h1>AutoPod Free</h1>
+      <div class="connection-status" id="connectionStatus">
+        <span class="status-dot offline"></span>
+        <span class="status-text">Backend Offline</span>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="panel-content">
+      <!-- Step 1: Sequence Selection -->
+      <section class="panel-section" id="sequenceSection">
+        <h2>1. Sequence & Sources</h2>
+
+        <div class="form-group">
+          <label>Active Sequence</label>
+          <div class="sequence-info" id="sequenceInfo">
+            <span class="placeholder">No sequence selected</span>
+          </div>
+          <button class="btn btn-secondary" id="refreshSequenceBtn">Refresh</button>
+        </div>
+
+        <div class="form-group">
+          <label>Audio Source Track</label>
+          <select id="audioTrackSelect" disabled>
+            <option value="">Select audio track...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Camera Clips</label>
+          <div class="clip-list" id="cameraClipList">
+            <span class="placeholder">Load clips from project</span>
+          </div>
+          <button class="btn btn-secondary" id="loadClipsBtn">Load from Project</button>
+        </div>
+      </section>
+
+      <!-- Step 2: Analysis -->
+      <section class="panel-section" id="analysisSection">
+        <h2>2. Analyze Audio</h2>
+
+        <button class="btn btn-primary btn-large" id="analyzeBtn" disabled>
+          Analyze Speakers
+        </button>
+
+        <div class="progress-container hidden" id="progressContainer">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-text" id="progressText">Initializing...</div>
+        </div>
+      </section>
+
+      <!-- Step 3: Speaker Mapping (shown after analysis) -->
+      <section class="panel-section hidden" id="mappingSection">
+        <h2>3. Map Speakers to Cameras</h2>
+
+        <div class="speaker-map-container" id="speakerMapContainer">
+          <!-- Dynamically populated -->
+        </div>
+
+        <div class="timeline-preview" id="timelinePreview">
+          <div class="timeline-track" id="timelineTrack">
+            <!-- Speaker segments visualized here -->
+          </div>
+          <div class="timeline-ruler" id="timelineRuler"></div>
+        </div>
+      </section>
+
+      <!-- Step 4: Settings -->
+      <section class="panel-section" id="settingsSection">
+        <h2>4. Edit Settings</h2>
+
+        <div class="settings-group">
+          <h3>Cut Behavior</h3>
+          <div class="form-group">
+            <label>Min Cut Duration (sec)</label>
+            <input type="number" id="minCutDuration" value="2.0" min="0.5" max="10" step="0.5">
+          </div>
+          <div class="form-group">
+            <label>Camera Hold Time (sec)</label>
+            <input type="number" id="cameraHoldTime" value="1.5" min="0.5" max="10" step="0.5">
+          </div>
+          <div class="form-group">
+            <label>Speaker Confidence Threshold</label>
+            <input type="range" id="speakerConfidence" value="0.7" min="0.3" max="1.0" step="0.05">
+            <span class="range-value" id="speakerConfidenceValue">0.7</span>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <h3>Silence Removal</h3>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="enableSilenceRemoval" checked>
+              Remove Silences
+            </label>
+          </div>
+          <div class="form-group">
+            <label>Silence Threshold (dB)</label>
+            <input type="number" id="silenceThreshold" value="-40" min="-60" max="-20" step="1">
+          </div>
+          <div class="form-group">
+            <label>Min Silence Duration (sec)</label>
+            <input type="number" id="minSilenceDuration" value="0.4" min="0.1" max="2" step="0.1">
+          </div>
+          <div class="form-group">
+            <label>Padding (sec)</label>
+            <input type="number" id="silencePadding" value="0.1" min="0" max="0.5" step="0.05">
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <h3>Audio Leveling</h3>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="enableAudioLeveling" checked>
+              Apply Audio Leveling
+            </label>
+          </div>
+          <div class="form-group">
+            <label>Target Loudness (LUFS)</label>
+            <input type="number" id="targetLoudness" value="-16" min="-24" max="-9" step="1">
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="applyLimiter" checked>
+              Apply Limiter
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <h3>Advanced</h3>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="enableReactionShots">
+              Enable Reaction Shots
+            </label>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="useWideShot" checked>
+              Wide Shot on Low Confidence
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 5: Apply Edits -->
+      <section class="panel-section" id="applySection">
+        <h2>5. Apply Edits</h2>
+
+        <div class="edit-summary hidden" id="editSummary">
+          <div class="summary-item">
+            <span class="label">Cuts to make:</span>
+            <span class="value" id="cutsCount">0</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">Silences to remove:</span>
+            <span class="value" id="silencesCount">0</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">Time saved:</span>
+            <span class="value" id="timeSaved">0:00</span>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn btn-secondary" id="previewBtn" disabled>
+            Preview (Markers Only)
+          </button>
+          <button class="btn btn-primary btn-large" id="applyEditsBtn" disabled>
+            Apply Edits
+          </button>
+        </div>
+
+        <p class="info-text">
+          A new sequence will be created. Original sequence is not modified.
+        </p>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="panel-footer">
+      <div class="log-output" id="logOutput">
+        <div class="log-entry">Ready. Connect to backend to begin.</div>
+      </div>
+    </footer>
+  </div>
+
+  <script type="module" src="index.js"></script>
+</body>
+</html>

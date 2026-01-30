@@ -1,0 +1,65 @@
+{
+  "id": "com.autopod-free.panel",
+  "name": "AutoPod Free",
+  "version": "1.0.0",
+  "main": "src/index.html",
+  "manifestVersion": 6,
+  "host": [
+    {
+      "app": "PProHeadless",
+      "minVersion": "25.0.0"
+    },
+    {
+      "app": "ppro",
+      "minVersion": "25.0.0"
+    }
+  ],
+  "entrypoints": [
+    {
+      "type": "panel",
+      "id": "com.autopod-free.panel.main",
+      "label": {
+        "default": "AutoPod Free"
+      },
+      "minimumSize": {
+        "width": 300,
+        "height": 400
+      },
+      "preferredDockedSize": {
+        "width": 350,
+        "height": 600
+      },
+      "preferredFloatingSize": {
+        "width": 400,
+        "height": 700
+      },
+      "icons": [
+        {
+          "width": 24,
+          "height": 24,
+          "path": "icons/icon_24.png",
+          "scale": [
+            1,
+            2
+          ],
+          "theme": [
+            "all"
+          ]
+        }
+      ]
+    }
+  ],
+  "requiredPermissions": {
+    "network": {
+      "domains": [
+        "http://localhost:3847",
+        "ws://localhost:3847"
+      ]
+    },
+    "localFileSystem": "fullAccess",
+    "allowCodeGenerationFromStrings": true
+  },
+  "featureFlags": {
+    "enableSWCDisabling": true
+  }
+}

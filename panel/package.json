@@ -1,0 +1,13 @@
+{
+  "name": "@autopod-free/panel",
+  "version": "1.0.0",
+  "description": "UXP Panel for AutoPod Free - Premiere Pro Extension",
+  "type": "module",
+  "scripts": {
+    "build": "echo 'No build step required for UXP panel'",
+    "watch": "echo 'Use UXP Developer Tools for live reload'"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "license": "MIT"
+}

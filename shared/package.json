@@ -1,0 +1,12 @@
+{
+  "name": "@autopod-free/shared",
+  "version": "1.0.0",
+  "description": "Shared types and constants for AutoPod Free",
+  "type": "module",
+  "main": "constants.js",
+  "exports": {
+    "./constants": "./constants.js",
+    "./types": "./types.js"
+  },
+  "license": "MIT"
+}

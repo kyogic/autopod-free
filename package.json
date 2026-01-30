@@ -1,0 +1,33 @@
+{
+  "name": "autopod-free",
+  "version": "1.0.0",
+  "description": "Open-source AutoPod alternative for Adobe Premiere Pro - automatic multicam editing based on speaker detection",
+  "private": true,
+  "workspaces": [
+    "panel",
+    "backend",
+    "shared"
+  ],
+  "scripts": {
+    "backend": "npm run start --workspace=backend",
+    "backend:dev": "npm run dev --workspace=backend",
+    "panel:build": "npm run build --workspace=panel",
+    "panel:watch": "npm run watch --workspace=panel",
+    "test": "npm run test --workspaces --if-present",
+    "install:python": "cd backend/python && pip install -r requirements.txt",
+    "setup": "npm install && npm run install:python"
+  },
+  "keywords": [
+    "premiere-pro",
+    "uxp",
+    "multicam",
+    "speaker-diarization",
+    "video-editing",
+    "autopod"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
