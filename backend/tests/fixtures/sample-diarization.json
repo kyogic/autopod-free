@@ -1,0 +1,26 @@
+{
+  "segments": [
+    {"speakerId": "SPEAKER_00", "start": 0.0, "end": 12.5, "confidence": 0.92},
+    {"speakerId": "SPEAKER_01", "start": 12.8, "end": 35.2, "confidence": 0.89},
+    {"speakerId": "SPEAKER_00", "start": 35.5, "end": 48.0, "confidence": 0.94},
+    {"speakerId": "SPEAKER_01", "start": 48.3, "end": 72.1, "confidence": 0.87},
+    {"speakerId": "SPEAKER_00", "start": 72.5, "end": 95.0, "confidence": 0.91},
+    {"speakerId": "SPEAKER_01", "start": 95.2, "end": 120.0, "confidence": 0.88}
+  ],
+  "silences": [
+    {"start": 12.5, "end": 12.8, "duration": 0.3},
+    {"start": 35.2, "end": 35.5, "duration": 0.3},
+    {"start": 48.0, "end": 48.3, "duration": 0.3},
+    {"start": 72.1, "end": 72.5, "duration": 0.4},
+    {"start": 95.0, "end": 95.2, "duration": 0.2}
+  ],
+  "audioAnalysis": {
+    "peakDb": -1.2,
+    "rmsDb": -18.5,
+    "integratedLufs": -16.2,
+    "truePeak": -0.8,
+    "loudnessRange": 8.5
+  },
+  "duration": 120.0,
+  "numSpeakers": 2
+}

@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { analyzeRouter } from './routes/analyze.js';
 import { silenceRouter } from './routes/silence.js';
 import { audioRouter } from './routes/audio.js';
+import { edlRouter } from './routes/edl.js';
 import { JobManager } from './services/jobManager.js';
 
 const PORT = process.env.PORT || 3847;
@@ -45,6 +46,7 @@ app.get('/health', (req, res) => {
 app.use('/api/analyze', analyzeRouter);
 app.use('/api/silence', silenceRouter);
 app.use('/api/audio', audioRouter);
+app.use('/api/generate-edl', edlRouter);
 
 // Error handler
 app.use((err, req, res, next) => {
