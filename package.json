@@ -9,13 +9,17 @@
     "shared"
   ],
   "scripts": {
+    "start": "npm run start --workspace=backend",
     "backend": "npm run start --workspace=backend",
     "backend:dev": "npm run dev --workspace=backend",
     "panel:build": "npm run build --workspace=panel",
     "panel:watch": "npm run watch --workspace=panel",
-    "test": "npm run test --workspaces --if-present",
+    "test": "npm run test --workspace=backend",
+    "test:e2e": "bash scripts/e2e-test.sh",
+    "build": "bash scripts/build.sh",
     "install:python": "cd backend/python && pip install -r requirements.txt",
-    "setup": "npm install && npm run install:python"
+    "setup": "npm install && npm run install:python",
+    "clean": "rm -rf dist node_modules backend/node_modules panel/node_modules shared/node_modules"
   },
   "keywords": [
     "premiere-pro",
