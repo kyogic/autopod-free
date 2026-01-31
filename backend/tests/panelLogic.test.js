@@ -344,3 +344,332 @@ describe('Silence Removal Logic', () => {
     assert.ok(processed[1].start > processed[2].start);
   });
 });
+
+describe('Clip Overlap Detection', () => {
+  // Simulate the overlap detection logic from editor.js
+  function detectOverlaps(clips, regionStart, regionEnd) {
+    const results = {
+      fullyContained: [],
+      trimStart: [],
+      trimEnd: [],
+      split: []
+    };
+
+    for (const clip of clips) {
+      const { start: clipStart, end: clipEnd } = clip;
+
+      // Case 1: Clip fully within region
+      if (clipStart >= regionStart && clipEnd <= regionEnd) {
+        results.fullyContained.push(clip);
+      }
+      // Case 2: Region fully within clip (needs split)
+      else if (clipStart < regionStart && clipEnd > regionEnd) {
+        results.split.push(clip);
+      }
+      // Case 3: Clip starts before and overlaps into region
+      else if (clipStart < regionStart && clipEnd > regionStart && clipEnd <= regionEnd) {
+        results.trimEnd.push(clip);
+      }
+      // Case 4: Clip starts in region and extends past
+      else if (clipStart >= regionStart && clipStart < regionEnd && clipEnd > regionEnd) {
+        results.trimStart.push(clip);
+      }
+    }
+
+    return results;
+  }
+
+  it('should detect fully contained clips', () => {
+    const clips = [
+      { start: 12, end: 18, id: 'clip1' }  // Fully within 10-20
+    ];
+
+    const result = detectOverlaps(clips, 10, 20);
+
+    assert.strictEqual(result.fullyContained.length, 1);
+    assert.strictEqual(result.fullyContained[0].id, 'clip1');
+  });
+
+  it('should detect clips needing end trim', () => {
+    const clips = [
+      { start: 5, end: 15, id: 'clip1' }  // Starts before, ends within
+    ];
+
+    const result = detectOverlaps(clips, 10, 20);
+
+    assert.strictEqual(result.trimEnd.length, 1);
+    assert.strictEqual(result.trimEnd[0].id, 'clip1');
+  });
+
+  it('should detect clips needing start trim', () => {
+    const clips = [
+      { start: 15, end: 25, id: 'clip1' }  // Starts within, ends after
+    ];
+
+    const result = detectOverlaps(clips, 10, 20);
+
+    assert.strictEqual(result.trimStart.length, 1);
+    assert.strictEqual(result.trimStart[0].id, 'clip1');
+  });
+
+  it('should detect clips needing split', () => {
+    const clips = [
+      { start: 5, end: 25, id: 'clip1' }  // Spans entire region
+    ];
+
+    const result = detectOverlaps(clips, 10, 20);
+
+    assert.strictEqual(result.split.length, 1);
+    assert.strictEqual(result.split[0].id, 'clip1');
+  });
+
+  it('should handle multiple overlapping clips', () => {
+    const clips = [
+      { start: 12, end: 18, id: 'fully' },
+      { start: 5, end: 15, id: 'trimEnd' },
+      { start: 15, end: 25, id: 'trimStart' },
+      { start: 5, end: 25, id: 'split' },
+      { start: 0, end: 5, id: 'outside' }  // No overlap
+    ];
+
+    const result = detectOverlaps(clips, 10, 20);
+
+    assert.strictEqual(result.fullyContained.length, 1);
+    assert.strictEqual(result.trimEnd.length, 1);
+    assert.strictEqual(result.trimStart.length, 1);
+    assert.strictEqual(result.split.length, 1);
+  });
+
+  it('should handle empty clip list', () => {
+    const result = detectOverlaps([], 10, 20);
+
+    assert.deepStrictEqual(result.fullyContained, []);
+    assert.deepStrictEqual(result.trimEnd, []);
+    assert.deepStrictEqual(result.trimStart, []);
+    assert.deepStrictEqual(result.split, []);
+  });
+});
+
+describe('Audio Leveling Logic', () => {
+  function calculateGainAdjustment(currentLufs, targetLufs) {
+    const adjustment = targetLufs - currentLufs;
+    return Math.max(-24, Math.min(24, adjustment));
+  }
+
+  it('should calculate positive gain for quiet audio', () => {
+    const gain = calculateGainAdjustment(-24, -16);
+    assert.strictEqual(gain, 8);  // Need +8 dB
+  });
+
+  it('should calculate negative gain for loud audio', () => {
+    const gain = calculateGainAdjustment(-10, -16);
+    assert.strictEqual(gain, -6);  // Need -6 dB
+  });
+
+  it('should clamp extreme positive gain', () => {
+    const gain = calculateGainAdjustment(-50, -16);
+    assert.strictEqual(gain, 24);  // Clamped to +24 dB
+  });
+
+  it('should clamp extreme negative gain', () => {
+    const gain = calculateGainAdjustment(10, -16);
+    assert.strictEqual(gain, -24);  // Clamped to -24 dB
+  });
+
+  it('should return zero for matched levels', () => {
+    const gain = calculateGainAdjustment(-16, -16);
+    assert.strictEqual(gain, 0);
+  });
+});
+
+describe('Per-Track Leveling', () => {
+  function applyTrackGains(tracks, globalGain, perTrackGains) {
+    return tracks.map((track, index) => {
+      const gain = perTrackGains && perTrackGains[index] !== undefined
+        ? perTrackGains[index]
+        : globalGain;
+      return { ...track, appliedGain: gain };
+    });
+  }
+
+  it('should apply global gain when no per-track gains specified', () => {
+    const tracks = [{ id: 0 }, { id: 1 }, { id: 2 }];
+    const result = applyTrackGains(tracks, 6, null);
+
+    assert.strictEqual(result[0].appliedGain, 6);
+    assert.strictEqual(result[1].appliedGain, 6);
+    assert.strictEqual(result[2].appliedGain, 6);
+  });
+
+  it('should apply per-track gains when specified', () => {
+    const tracks = [{ id: 0 }, { id: 1 }, { id: 2 }];
+    const perTrackGains = { 0: 3, 1: 6, 2: 9 };
+    const result = applyTrackGains(tracks, 0, perTrackGains);
+
+    assert.strictEqual(result[0].appliedGain, 3);
+    assert.strictEqual(result[1].appliedGain, 6);
+    assert.strictEqual(result[2].appliedGain, 9);
+  });
+
+  it('should fall back to global gain for missing track gains', () => {
+    const tracks = [{ id: 0 }, { id: 1 }, { id: 2 }];
+    const perTrackGains = { 1: 10 };  // Only track 1 specified
+    const result = applyTrackGains(tracks, 5, perTrackGains);
+
+    assert.strictEqual(result[0].appliedGain, 5);  // Global
+    assert.strictEqual(result[1].appliedGain, 10); // Per-track
+    assert.strictEqual(result[2].appliedGain, 5);  // Global
+  });
+});
+
+describe('Limiter Settings', () => {
+  function validateLimiterSettings(ceiling) {
+    // Ceiling should be 0 or negative (dB)
+    if (ceiling > 0) {
+      return { valid: false, error: 'Ceiling must be 0 dB or lower' };
+    }
+    // Ceiling shouldn't be too low
+    if (ceiling < -20) {
+      return { valid: false, error: 'Ceiling is too low, will severely limit output' };
+    }
+    return { valid: true };
+  }
+
+  it('should accept valid ceiling values', () => {
+    assert.ok(validateLimiterSettings(-1).valid);
+    assert.ok(validateLimiterSettings(-3).valid);
+    assert.ok(validateLimiterSettings(0).valid);
+    assert.ok(validateLimiterSettings(-10).valid);
+  });
+
+  it('should reject positive ceiling values', () => {
+    assert.strictEqual(validateLimiterSettings(1).valid, false);
+    assert.strictEqual(validateLimiterSettings(6).valid, false);
+  });
+
+  it('should warn about very low ceiling values', () => {
+    assert.strictEqual(validateLimiterSettings(-25).valid, false);
+    assert.strictEqual(validateLimiterSettings(-30).valid, false);
+  });
+});
+
+describe('Silence Marker Generation', () => {
+  function generateSilenceMarkerData(silences, settings = {}) {
+    const {
+      silencePadding = 0.1,
+      minSilenceDuration = 0.3
+    } = settings;
+
+    const markers = [];
+
+    for (const silence of silences) {
+      const start = silence.start + silencePadding;
+      const end = silence.end - silencePadding;
+      const duration = end - start;
+
+      if (duration >= minSilenceDuration) {
+        markers.push({
+          time: start,
+          name: `Silence: ${duration.toFixed(2)}s`,
+          duration,
+          originalStart: silence.start,
+          originalEnd: silence.end
+        });
+      }
+    }
+
+    return markers;
+  }
+
+  it('should generate marker data for valid silences', () => {
+    const silences = [
+      { start: 10, end: 15, duration: 5 }
+    ];
+
+    const markers = generateSilenceMarkerData(silences);
+
+    assert.strictEqual(markers.length, 1);
+    assert.strictEqual(markers[0].time, 10.1);
+    assert.ok(markers[0].name.includes('4.80s'));
+  });
+
+  it('should skip silences too short after padding', () => {
+    const silences = [
+      { start: 10, end: 10.4, duration: 0.4 }  // After padding: 0.2s
+    ];
+
+    const markers = generateSilenceMarkerData(silences);
+
+    assert.strictEqual(markers.length, 0);
+  });
+
+  it('should generate multiple markers', () => {
+    const silences = [
+      { start: 10, end: 15, duration: 5 },
+      { start: 25, end: 30, duration: 5 },
+      { start: 45, end: 50, duration: 5 }
+    ];
+
+    const markers = generateSilenceMarkerData(silences);
+
+    assert.strictEqual(markers.length, 3);
+  });
+});
+
+describe('Preview Edit Calculation', () => {
+  function calculatePreviewStats(silences, settings = {}) {
+    const {
+      silencePadding = 0.1,
+      minSilenceDuration = 0.3
+    } = settings;
+
+    let estimatedTimeRemoved = 0;
+    let silenceCount = 0;
+
+    for (const silence of silences) {
+      const start = silence.start + silencePadding;
+      const end = silence.end - silencePadding;
+      const duration = end - start;
+
+      if (duration >= minSilenceDuration) {
+        estimatedTimeRemoved += duration;
+        silenceCount++;
+      }
+    }
+
+    return {
+      silenceCount,
+      estimatedTimeRemoved: Math.round(estimatedTimeRemoved * 100) / 100
+    };
+  }
+
+  it('should calculate time removal estimate', () => {
+    const silences = [
+      { start: 10, end: 15, duration: 5 },  // 4.8s after padding
+      { start: 25, end: 28, duration: 3 }   // 2.8s after padding
+    ];
+
+    const stats = calculatePreviewStats(silences);
+
+    assert.strictEqual(stats.silenceCount, 2);
+    assert.strictEqual(stats.estimatedTimeRemoved, 7.6);
+  });
+
+  it('should exclude short silences from estimate', () => {
+    const silences = [
+      { start: 10, end: 15, duration: 5 },  // Valid
+      { start: 25, end: 25.4, duration: 0.4 }  // Too short
+    ];
+
+    const stats = calculatePreviewStats(silences);
+
+    assert.strictEqual(stats.silenceCount, 1);
+  });
+
+  it('should handle empty silences array', () => {
+    const stats = calculatePreviewStats([]);
+
+    assert.strictEqual(stats.silenceCount, 0);
+    assert.strictEqual(stats.estimatedTimeRemoved, 0);
+  });
+});
